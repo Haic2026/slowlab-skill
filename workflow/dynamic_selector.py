@@ -16,7 +16,8 @@ import sys
 
 # 树懒精 SlowLab 固定人设锚点（来自 spec 1/2 节；V0.7 起 theme-style.jpg 为 IP 主题形象权威）
 IP_ANCHOR = {
-    "name": "树懒精 SlowLab",
+    "name": "树懒精 SlowLab（家族）",
+    "character_name": "lala（树懒精家族成员，用户命名）",
     "species": "抽象极简人形树懒",
     "face": "仅一根极简眼睑弧线；无大圆眼睛、无腮红；面部大量留白",
     "limb": "长爪下垂；优先半躺松弛倚靠/缓慢站立；禁止悬挂吊在树上",
@@ -56,7 +57,8 @@ PANEL = {
 
 def recognize(text=""):
     """IP 动态识别报告：固定人设 + 输入补充"""
-    report = {"IP名称": IP_ANCHOR["name"], "主体轮廓": IP_ANCHOR["species"],
+    report = {"IP名称": IP_ANCHOR["name"], "角色名": IP_ANCHOR.get("character_name", ""),
+              "主体轮廓": IP_ANCHOR["species"],
               "头部/面部特征": IP_ANCHOR["face"], "肢体特征": IP_ANCHOR["limb"],
               "固定道具": IP_ANCHOR["props"], "气质": IP_ANCHOR["aura"],
               "固定色板": IP_ANCHOR["palette"], "主题风格范本": IP_ANCHOR["theme_ref"],
