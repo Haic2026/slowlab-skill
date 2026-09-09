@@ -14,7 +14,7 @@ dynamic_selector.py — 动态交互选择模块（勾选式）
 import json
 import sys
 
-# 树懒精 SlowLab 固定人设锚点（来自 spec 1/2 节）
+# 树懒精 SlowLab 固定人设锚点（来自 spec 1/2 节；V0.7 起 theme-style.jpg 为 IP 主题形象权威）
 IP_ANCHOR = {
     "name": "树懒精 SlowLab",
     "species": "抽象极简人形树懒",
@@ -26,6 +26,7 @@ IP_ANCHOR = {
                 "深炭绿 #1F231C", "咖啡棕 #3C3327"],
     "ext_palette": ["旧纸米白 #E8DFCF", "淡灰褐 #B8AFA3", "铅笔灰 #6E6E6E"],
     "theme_ref": "references/theme-style.jpg",
+    "ip_authority": "theme-style.jpg 为 IP 主题形象权威（用户指定，V0.7）：形象细节（趴枝干休憩/闭眼浅笑/大地色+深绿毛色/棕咖啡杯+棕手提袋+复古时钟三件套样式）以它为主旨；生成时形象参考图优先使用 theme-style.jpg + core-ip",
     "keywords": ["松弛", "留白", "缓慢", "一杯咖啡的时间", "放空", "不追赶", "舒展"]
 }
 
@@ -58,7 +59,8 @@ def recognize(text=""):
     report = {"IP名称": IP_ANCHOR["name"], "主体轮廓": IP_ANCHOR["species"],
               "头部/面部特征": IP_ANCHOR["face"], "肢体特征": IP_ANCHOR["limb"],
               "固定道具": IP_ANCHOR["props"], "气质": IP_ANCHOR["aura"],
-              "固定色板": IP_ANCHOR["palette"], "主题风格范本": IP_ANCHOR["theme_ref"]}
+              "固定色板": IP_ANCHOR["palette"], "主题风格范本": IP_ANCHOR["theme_ref"],
+              "IP主题形象权威": IP_ANCHOR["ip_authority"]}
     if text:
         report["用户补充需求"] = text
     return report
