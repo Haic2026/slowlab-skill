@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 """
-dynamic_selector.py — 动态交互选择模块
-功能：IP 特征识别 → 动态生成选择面板（随 IP 变化，非固定模板）→ 用户选择/默认填充
+dynamic_selector.py — 动态交互选择模块（勾选式）
+功能：IP 特征识别 → 动态生成勾选式选择面板 → 用户勾选/自定义输入解析
+交互模式：我弹出选项（☐ 勾选框），用户打勾选择；没有想要的选项时，
+          用户直接在面板下方输入自定义需求，按自定义需求重新生成面板或直接执行。
 用法：
-    python dynamic_selector.py recognize
-    python dynamic_selector.py panel
-    python dynamic_selector.py apply "默认"
-    python dynamic_selector.py apply "1A-2B-3A-4帆布托特包-5A"
+    python dynamic_selector.py panel                 # 输出勾选式面板
+    python dynamic_selector.py recognize "树懒在书店" # 输出 IP 识别报告
+    python dynamic_selector.py apply "默认"           # 默认参数
+    python dynamic_selector.py apply "①A ②D ④公园长椅"  # 勾选组合解析
+    python dynamic_selector.py apply "树懒躺在草地上晒太阳" # 自定义输入
 """
 import json
 import sys
@@ -31,15 +34,22 @@ DEFAULTS = {
     "产出类型": "A 核心形象定稿",
     "风格方向": "D 原创手绘绘本风",
     "图案分类": "A 主图案",
-    "应用产品": "社媒配图 / 场景插画",
-    "core_ip": "A 沿用已确认形象延展"
+    "内容/场景": "延续已确认场景方向",
+    "应用产品": "帆布托特包",
+    "core_ip": "A 沿用已确认形象延展",
 }
 
-STYLE_MAP = {
-    "A": "极简潮玩风",
-    "B": "印花图案风",
-    "C": "电商产品图风",
-    "D": "原创手绘绘本风",
+# 勾选面板结构：题目 → 选项列表
+PANEL = {
+    "① 产出类型": ["A. 核心形象定稿", "B. 全套IP系统（三视图/设定卡/表情/周边）", "C. 商用物料"],
+    "② 风格方向": ["A. 极简潮玩", "B. 印花图案", "C. 电商产品图", "D. 原创手绘绘本（当前基调）"],
+    "③ 图案分类": ["A. 主图案", "B. 小标图案", "C. 辅助图形"],
+    "④ 内容/场景": [
+        "A. 新场景·公园长椅", "B. 新场景·雨天窗边", "C. 新场景·卧室晨光", "D. 新场景·树下放空",
+        "E. 形态·三视图", "F. 形态·设定卡", "G. 形态·贴纸", "H. 形态·吊牌小标", "I. 形态·表情包",
+    ],
+    "⑤ 应用产品": ["A. 帆布托特包", "B. 线圈本", "C. 吊牌", "D. 贴纸", "E. 社媒配图", "F. 电商物料"],
+    "⑥ core-ip 基础": ["A. 沿用已确认形象延展（默认）", "B. 完全重画"],
 }
 
 
@@ -55,33 +65,49 @@ def recognize(text=""):
 
 
 def panel():
-    """动态选择面板：选项随 IP 人设生成"""
-    return {
-        "① 产出类型": ["A 核心形象定稿", "B 全套IP系统", "C 商用物料"],
-        "② 风格方向": ["A 极简潮玩", "B 印花图案", "C 电商产品图", "D 原创手绘绘本"],
-        "③ 图案分类": ["A 主图案", "B 小标图案", "C 辅助图形"],
-        "④ 应用产品": ["帆布托特包", "线圈本", "吊牌", "贴纸", "社媒配图", "电商物料", "其他"],
-        "⑤ core-ip 基础": ["A 沿用已确认形象延展", "B 完全重画新形象"],
-    }
+    """勾选式交互面板：每个选项前带 ☐ 勾选框，底部提供自定义输入通道"""
+    lines = ["【动态交互选择面板】（勾选式）", ""]
+    for title, opts in PANEL.items():
+        lines.append(f"【{title}】")
+        for o in opts:
+            lines.append(f"  ☐ {o}")
+        lines.append("")
+    lines.append("💬 以上选项没有你想要的？直接在下面输入你的需求（例如：")
+    lines.append("   “树懒躺在草地上晒太阳，做手机壳图案”），")
+    lines.append("   我会按你的描述重新生成面板或直接执行。")
+    lines.append("")
+    lines.append("回复格式：勾选组合如「①A ②D ④A ⑤A」，或回复【默认】按推荐参数执行。")
+    return "\n".join(lines)
 
 
 def apply(choice):
-    """解析用户选择：默认 or 编号组合"""
+    """解析用户输入：默认 / 勾选组合 / 自定义需求"""
     if choice in ("默认", "default", ""):
-        return DEFAULTS
-    # 解析如 "1A-2B-3A-4帆布托特包-5A"
+        return {"mode": "default", "params": DEFAULTS}
+    # 勾选组合解析：如 "①A ②D ④A ⑤A" 或 "1A 2D 4A 5A"
+    markers = "①②③④⑤⑥"
     out = {}
-    for seg in choice.replace("，", "-").replace(",", "-").split("-"):
+    custom = []
+    segs = choice.replace("，", " ").replace(",", " ").split()
+    for seg in segs:
         seg = seg.strip()
         if not seg:
             continue
-        if seg[0] in "12345":
-            key = list(DEFAULTS)[int(seg[0]) - 1]
-            val = seg[1:]
-            if key == "风格方向" and val in STYLE_MAP:
-                val = f"{val} {STYLE_MAP[val]}"
-            out[key] = val
-    return out or DEFAULTS
+        if seg[0] in markers or (seg[0] in "123456" and len(seg) >= 2 and seg[1] in "ABCDEFGHI"):
+            key_idx = markers.index(seg[0]) if seg[0] in markers else int(seg[0]) - 1
+            key = list(PANEL)[key_idx]
+            val = seg[1:].upper()
+            for o in PANEL[key]:
+                if o.startswith(val + ".") or o.startswith(val + " "):
+                    out[key] = o
+                    break
+            else:
+                out[key] = f"{val}（用户自定义勾选）"
+        else:
+            custom.append(seg)
+    if custom:
+        return {"mode": "custom", "需求": " ".join(custom), "勾选": out or DEFAULTS}
+    return {"mode": "select", "勾选": out or DEFAULTS}
 
 
 if __name__ == "__main__":
@@ -92,4 +118,4 @@ if __name__ == "__main__":
     elif cmd == "apply":
         print(json.dumps(apply(text), ensure_ascii=False, indent=2))
     else:
-        print(json.dumps(panel(), ensure_ascii=False, indent=2))
+        print(panel())
